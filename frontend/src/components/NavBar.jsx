@@ -17,9 +17,7 @@ export default function NavBar(props) {
         <h1>picmd2</h1>
       </A>
       <nav class="flex flex-wrap items-center gap-3">
-        <A href="/upload" class="btn">
-          Upload
-        </A>
+
         <A href="/stats" class="btn">
           Stats
         </A>

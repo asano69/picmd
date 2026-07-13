@@ -23,9 +23,9 @@ var compressor media.Compressor = media.WebPCompressor{}
 // version before the record is persisted. The "filename" and "filesize"
 // fields are updated to reflect the compressed output.
 //
-// Note: only the first uploaded file is compressed. Multi-image upload is
-// still an open question
-// so this intentionally stays single-file until that's decided.
+// Note: each "images" record holds exactly one file. Multi-file selection
+// on the frontend is handled by creating one record per file, so this
+// hook only ever needs to deal with a single upload per call.
 func RegisterImageCompression(app core.App) {
 	app.OnRecordCreateRequest("images").BindFunc(func(e *core.RecordRequestEvent) error {
 		files, err := e.FindUploadedFiles("image")

@@ -5,7 +5,6 @@ import { createSignal, onCleanup, Show } from "solid-js";
 // Order matters: tokens.css defines the CSS custom properties every other
 // stylesheet consumes via var().
 import "./style.css";
-import Home from "./routes/Home";
 import Settings from "./routes/Settings";
 import Login from "./routes/Login";
 import Upload from "./routes/Upload";
@@ -32,8 +31,7 @@ render(
   () => (
     <AuthGate>
       <Router>
-        <Route path="/" component={Home} />
-        <Route path="/upload" component={Upload} />
+        <Route path="/" component={Upload} />
         <Route path="/settings" component={Settings} />
       </Router>
     </AuthGate>
