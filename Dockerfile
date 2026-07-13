@@ -57,8 +57,8 @@ RUN addgroup -g 1000 picmd && \
 
 COPY --from=go-builder /build/picmd /usr/local/bin/picmd
 
-RUN mkdir -p /certs /data
-RUN chown -R 1000:1000 /picmd /data
+RUN mkdir -p /certs /picmd/data
+RUN chown -R picmd:picmd /picmd /picmd/data
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
@@ -66,5 +66,5 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 EXPOSE 3000
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["picmd", "serve", "--dir=/data"]
+CMD ["picmd", "serve", "--dir=/picmd/data"]
 
