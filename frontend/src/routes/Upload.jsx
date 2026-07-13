@@ -44,7 +44,9 @@ export default function Upload() {
   };
 
   const updateItem = (id, patch) =>
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, ...patch } : it)),
+    );
 
   const removeItem = (id) => {
     const it = items().find((i) => i.id === id);
@@ -85,7 +87,9 @@ export default function Upload() {
       (it) => it.status === "pending" || it.status === "error",
     );
     if (pending.length === 0) return;
-    setStatus(`Uploading ${pending.length} image${pending.length > 1 ? "s" : ""}…`);
+    setStatus(
+      `Uploading ${pending.length} image${pending.length > 1 ? "s" : ""}…`,
+    );
     Promise.all(pending.map(uploadOne)).then(() => setStatus(""));
   };
 
@@ -175,13 +179,22 @@ export default function Upload() {
             <For each={items()}>
               {(item) => (
                 <div class="flex items-center gap-3 rounded-md border border-[var(--color-border-soft)] bg-[var(--color-panel)] p-3">
-                  <img
-                    src={item.previewUrl}
-                    alt="Preview"
-                    class="h-16 w-16 flex-none rounded object-cover"
-                  />
+                  <div class="relative h-16 w-16 flex-none">
+                    <img
+                      src={item.previewUrl}
+                      alt="Preview"
+                      class="h-16 w-16 rounded object-cover"
+                    />
+                    <Show when={item.status === "uploading"}>
+                      <div class="absolute inset-0 flex items-center justify-center rounded bg-black/40">
+                        <div class="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      </div>
+                    </Show>
+                  </div>
                   <div class="min-w-0 flex-1 text-sm">
-                    <p class="truncate">{item.file.name || "clipboard-image"}</p>
+                    <p class="truncate">
+                      {item.file.name || "clipboard-image"}
+                    </p>
                     <p class="opacity-70">
                       {formatSize(item.file.size)}
                       {item.status === "uploading" && " · Uploading…"}
@@ -199,7 +212,10 @@ export default function Upload() {
                     />
                   </Show>
                   <Show when={item.status !== "uploading"}>
-                    <Button value="Remove" onClick={() => removeItem(item.id)} />
+                    <Button
+                      value="Remove"
+                      onClick={() => removeItem(item.id)}
+                    />
                   </Show>
                 </div>
               )}
