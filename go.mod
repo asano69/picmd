@@ -3,9 +3,11 @@ module github.com/asano69/picmd2
 go 1.25.9
 
 require (
+	github.com/chai2010/webp v1.4.0
 	github.com/pocketbase/pocketbase v0.39.4
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
+	golang.org/x/image v0.43.0
 )
 
 require (
@@ -29,7 +31,6 @@ require (
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	golang.org/x/crypto v0.53.0 // indirect
-	golang.org/x/image v0.43.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
