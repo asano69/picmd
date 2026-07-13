@@ -8,9 +8,11 @@ fi
 
 # Bootstrap: create the first superuser if one doesn't exist yet.
 # Throwaway credential meant to be rotated via the UI right after first login.
-# Runs as picmd (same user as the main process) so it has permission to write pb_data.
-if [ -n "$INITIAL_ADMIN_EMAIL" ] && [ -n "$INITIAL_ADMIN_PASSWORD" ]; then
-  su-exec picmd:picmd picmd superuser create "$INITIAL_ADMIN_EMAIL" "$INITIAL_ADMIN_PASSWORD" --dir="/picmd/data}" || true
-fi
+ADMIN_EMAIL="${INITIAL_ADMIN_EMAIL:-admin@main.internal}"
+ADMIN_PASSWORD="${INITIAL_ADMIN_PASSWORD:-password}"
+
+PB_DATA_DIR="${PB_DATA_DIR:-/picmd/data}"
+
+su-exec picmd:picmd picmd superuser create "$ADMIN_EMAIL" "$ADMIN_PASSWORD" --dir="${PB_DATA_DIR}" || true
 
 exec su-exec picmd:picmd "$@"
