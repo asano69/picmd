@@ -48,6 +48,12 @@
 旧実装はXHRで正確な進捗%を出していましたが、PocketBase SDKは内部で`fetch`を使っており、素の`fetch`にはアップロード進捗イベントがありません。
 シンプルさ優先の方針に沿って、進捗バーは「アップロード中…」の単純な表示に簡略化します（Phase 4で決定済みのURL設計＝`pb.files.getURL()`をそのまま使う方針とも整合します）
 
+確認ポイント
+
+- pb.collection("images").create(formData) はimagesコレクションのcreateRuleが「superuserのみ」なので、ログイン済み(=AuthGate通過済み)でないと失敗します。今は_superusersログインで通っているはずなので問題ないはずです。
+- レスポンスのrecord.imageは圧縮後の実ファイル名（internal/hooks/images.goで.webp等に差し替え済み）が入ります。
+- pb.files.getURL(record, record.image) はPocketBase標準の /api/files/{collection}/{recordId}/{filename} を組み立てます。
+
 ## Phase 4（確定版）: URL / access設計
 
 **画像配信URL**
