@@ -11,8 +11,7 @@ fi
 ADMIN_EMAIL="${INITIAL_ADMIN_EMAIL:-admin@main.internal}"
 ADMIN_PASSWORD="${INITIAL_ADMIN_PASSWORD:-password}"
 
-PB_DATA_DIR="${PB_DATA_DIR:-/picmd/data}"
-
-su-exec picmd:picmd picmd superuser create "$ADMIN_EMAIL" "$ADMIN_PASSWORD" --dir="${PB_DATA_DIR}" || true
+# /picmd/data
+su-exec picmd:picmd picmd superuser create "$ADMIN_EMAIL" "$ADMIN_PASSWORD" --dir=data || true
 
 exec su-exec picmd:picmd "$@"
