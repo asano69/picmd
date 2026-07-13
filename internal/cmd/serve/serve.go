@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/asano69/picmd2/internal/assets"
 	"github.com/asano69/picmd2/internal/config"
+	"github.com/asano69/picmd2/internal/hooks"
 	"io/fs"
 	"net/http"
 
@@ -19,7 +20,7 @@ import (
 // Run opens the database and collection once, registers all drill routes, then
 // starts listening. The database and collection are shared across all sessions.
 func Run(app *pocketbase.PocketBase, cfg *config.Config) error {
-
+	hooks.RegisterImageCompression(app)
 	// assetsFS exposes just the "assets/" subdirectory that Vite's default
 	// (unprefixed) base writes hashed JS/CSS bundles into, so they're served
 	// at the conventional /assets/... URL instead of /static/assets/....

@@ -20,6 +20,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 # ==========================================
 FROM golang:1.26-alpine AS go-builder
 WORKDIR /build
+RUN apk add --no-cache gcc musl-dev
 # Copy and download Go dependencies first
 COPY go.mod go.sum* ./
 RUN --mount=type=cache,target=/go/pkg/mod \
@@ -32,7 +33,7 @@ COPY internal/ ./internal/
 COPY migrations/ ./migrations/
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o picmd2 ./cmd/picmd2
+    CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o picmd2 ./cmd/picmd2
 
 # ==========================================
 # Stage 2: Runtime
