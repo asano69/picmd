@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import NavBar from "../components/NavBar";
 import Button from "../components/Button";
 import pb from "../lib/pb";
@@ -10,85 +10,120 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// Upload lets the user paste, drop, or select an image, sends it to the
-// "images" collection (compression happens server-side, see
-// internal/hooks/images.go), and shows a Markdown snippet for the result.
+let nextId = 0;
+
+// Upload lets the user paste, drop, or select one or more images. Each
+// image becomes its own "images" record (compression happens
+// server-side per record, see internal/hooks/images.go), so uploading
+// several files just means running several independent uploads here —
+// no backend change is needed to support multi-file selection.
 export default function Upload() {
-  const [file, setFile] = createSignal(null);
-  const [previewUrl, setPreviewUrl] = createSignal("");
+  const [items, setItems] = createSignal([]);
   const [status, setStatus] = createSignal("");
-  const [uploading, setUploading] = createSignal(false);
-  const [result, setResult] = createSignal(null);
-  const [copied, setCopied] = createSignal(false);
+  const [allCopied, setAllCopied] = createSignal(false);
 
   let fileInputRef;
 
-  const pickFile = (f) => {
-    if (!f || !f.type.startsWith("image/")) {
+  const addFiles = (fileList) => {
+    const files = [...fileList].filter((f) => f.type.startsWith("image/"));
+    if (files.length === 0) {
       setStatus("Only image files are supported.");
       return;
     }
-    setFile(f);
-    setPreviewUrl(URL.createObjectURL(f));
-    setResult(null);
+    const newItems = files.map((file) => ({
+      id: nextId++,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      status: "pending", // pending | uploading | done | error
+      result: null,
+      error: "",
+    }));
+    setItems((prev) => [...prev, ...newItems]);
     setStatus("");
+    setAllCopied(false);
   };
 
-  const clear = () => {
-    setFile(null);
-    setPreviewUrl("");
-    setResult(null);
-    setStatus("");
+  const updateItem = (id, patch) =>
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+
+  const removeItem = (id) => {
+    const it = items().find((i) => i.id === id);
+    if (it) URL.revokeObjectURL(it.previewUrl);
+    setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
-  const upload = async () => {
-    const f = file();
-    if (!f) return;
-    setUploading(true);
-    setStatus("Uploading…");
+  const uploadOne = async (item) => {
+    updateItem(item.id, { status: "uploading", error: "" });
     try {
       const formData = new FormData();
-      formData.append("image", f, f.name || `clipboard-${Date.now()}.png`);
-      const record = await pb.collection("images").create(formData);
-      setResult({
-        url: new URL(`/i/${record.uuid}`, window.location.origin).href,
-        filename: record.filename,
-        filesize: record.filesize,
+      formData.append(
+        "image",
+        item.file,
+        item.file.name || `clipboard-${item.id}.png`,
+      );
+      // Each upload gets its own requestKey so PocketBase's SDK-level
+      // auto-cancellation (which assumes concurrent calls to the same
+      // endpoint are duplicates) doesn't abort sibling uploads.
+      const record = await pb.collection("images").create(formData, {
+        requestKey: `upload-${item.id}`,
       });
-      setCopied(false);
-      setStatus("Upload complete.");
+      updateItem(item.id, {
+        status: "done",
+        result: {
+          url: new URL(`/i/${record.uuid}`, window.location.origin).href,
+          filename: record.filename,
+          filesize: record.filesize,
+        },
+      });
     } catch (err) {
-      setStatus(`Upload failed: ${err.message}`);
-    } finally {
-      setUploading(false);
+      updateItem(item.id, { status: "error", error: err.message });
     }
   };
 
-  const copyMarkdown = () => {
-    const r = result();
-    if (!r) return;
-    navigator.clipboard.writeText(`![](${r.url})`);
-    setCopied(true);
+  const uploadAll = () => {
+    const pending = items().filter(
+      (it) => it.status === "pending" || it.status === "error",
+    );
+    if (pending.length === 0) return;
+    setStatus(`Uploading ${pending.length} image${pending.length > 1 ? "s" : ""}…`);
+    Promise.all(pending.map(uploadOne)).then(() => setStatus(""));
   };
 
-  // Pasting anywhere on the page picks up a clipboard image, matching the
-  // old upload.html behavior.
+  const clearAll = () => {
+    items().forEach((it) => URL.revokeObjectURL(it.previewUrl));
+    setItems([]);
+    setStatus("");
+    setAllCopied(false);
+  };
+
+  const copyAllMarkdown = () => {
+    const done = items().filter((it) => it.status === "done");
+    if (done.length === 0) return;
+    const markdown = done.map((it) => `![](${it.result.url})`).join("\n");
+    navigator.clipboard.writeText(markdown);
+    setAllCopied(true);
+  };
+
+  // Pasting anywhere on the page picks up every image on the clipboard,
+  // instead of stopping at the first one like the single-image version did.
   const onPaste = (e) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    for (const item of items) {
-      if (item.kind === "file" && item.type.startsWith("image/")) {
-        pickFile(item.getAsFile());
-        break;
-      }
-    }
+    const clipboardItems = e.clipboardData?.items;
+    if (!clipboardItems) return;
+    const files = [...clipboardItems]
+      .filter((it) => it.kind === "file" && it.type.startsWith("image/"))
+      .map((it) => it.getAsFile());
+    if (files.length > 0) addFiles(files);
   };
 
   const onDrop = (e) => {
     e.preventDefault();
-    const f = e.dataTransfer.files[0];
-    if (f) pickFile(f);
+    addFiles(e.dataTransfer.files);
   };
+
+  const hasItems = () => items().length > 0;
+  const hasPending = () =>
+    items().some((it) => it.status === "pending" || it.status === "error");
+  const hasDone = () => items().some((it) => it.status === "done");
 
   return (
     <div
@@ -97,13 +132,26 @@ export default function Upload() {
     >
       <NavBar />
 
+      {/* Kept outside the Show branches so "Add More" can reuse it too. */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,.svg"
+        multiple
+        class="hidden"
+        onChange={(e) => {
+          if (e.target.files.length) addFiles(e.target.files);
+          e.target.value = ""; // allow re-selecting the same file(s)
+        }}
+      />
+
       <Show
-        when={file()}
+        when={hasItems()}
         fallback={
           <div
             tabIndex="0"
             role="button"
-            aria-label="Paste, drop, or click to select an image"
+            aria-label="Paste, drop, or click to select images"
             class="flex w-full cursor-pointer flex-col items-center rounded-md border border-dashed border-[var(--color-border-soft)] bg-[var(--color-panel)] px-8 py-14 text-center"
             onDragOver={(e) => e.preventDefault()}
             onDrop={onDrop}
@@ -115,66 +163,62 @@ export default function Upload() {
             <p class="text-sm leading-loose">
               <span class="font-semibold">Ctrl+V</span> to paste from clipboard
               <br />
-              or drag &amp; drop an image here
+              or drag &amp; drop images here
               <br />
-              or <span class="font-semibold">click</span> to select a file
+              or <span class="font-semibold">click</span> to select files
             </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,.svg"
-              class="hidden"
-              onChange={(e) => {
-                if (e.target.files[0]) pickFile(e.target.files[0]);
-                e.target.value = ""; // allow re-selecting the same file
-              }}
-            />
           </div>
         }
       >
         <div class="w-full">
-          <img
-            src={previewUrl()}
-            alt="Preview"
-            class="w-full rounded-md border border-[var(--color-border-soft)]"
-          />
-          <p class="mt-2 text-sm opacity-70">
-            {file().name || "clipboard-image"} · {file().type} ·{" "}
-            {formatSize(file().size)}
-          </p>
-
-          <Show when={!result()}>
-            <div class="mt-3 flex flex-wrap">
-              <Button
-                value={uploading() ? "Uploading…" : "Upload"}
-                disabled={uploading()}
-                onClick={upload}
-              />
-              <Button value="Clear" disabled={uploading()} onClick={clear} />
-            </div>
-          </Show>
-
-          <Show when={result()}>
-            {(r) => (
-              <div class="mt-3 rounded-md border border-[var(--color-border-soft)] bg-[var(--color-panel)] p-4 text-sm leading-loose">
-                <div class="flex justify-between border-b border-[var(--color-border-soft)] pb-1">
-                  <span class="opacity-70">Filename</span>
-                  <span class="font-medium">{r().filename}</span>
-                </div>
-                <div class="flex justify-between py-1">
-                  <span class="opacity-70">Size</span>
-                  <span class="font-medium">{formatSize(r().filesize)}</span>
-                </div>
-                <div class="mt-2 flex flex-wrap">
-                  <Button
-                    value={copied() ? "Copied!" : "Copy Markdown"}
-                    onClick={copyMarkdown}
+          <div class="flex flex-col gap-3">
+            <For each={items()}>
+              {(item) => (
+                <div class="flex items-center gap-3 rounded-md border border-[var(--color-border-soft)] bg-[var(--color-panel)] p-3">
+                  <img
+                    src={item.previewUrl}
+                    alt="Preview"
+                    class="h-16 w-16 flex-none rounded object-cover"
                   />
-                  <Button value="Upload Another" onClick={clear} />
+                  <div class="min-w-0 flex-1 text-sm">
+                    <p class="truncate">{item.file.name || "clipboard-image"}</p>
+                    <p class="opacity-70">
+                      {formatSize(item.file.size)}
+                      {item.status === "uploading" && " · Uploading…"}
+                      {item.status === "done" &&
+                        ` · ${formatSize(item.result.filesize)} compressed`}
+                      {item.status === "error" && ` · Failed: ${item.error}`}
+                    </p>
+                  </div>
+                  <Show when={item.status === "done"}>
+                    <Button
+                      value="Copy"
+                      onClick={() =>
+                        navigator.clipboard.writeText(`![](${item.result.url})`)
+                      }
+                    />
+                  </Show>
+                  <Show when={item.status !== "uploading"}>
+                    <Button value="Remove" onClick={() => removeItem(item.id)} />
+                  </Show>
                 </div>
-              </div>
-            )}
-          </Show>
+              )}
+            </For>
+          </div>
+
+          <div class="mt-3 flex flex-wrap">
+            <Show when={hasPending()}>
+              <Button value="Upload All" onClick={uploadAll} />
+            </Show>
+            <Show when={hasDone()}>
+              <Button
+                value={allCopied() ? "Copied!" : "Copy All as Markdown"}
+                onClick={copyAllMarkdown}
+              />
+            </Show>
+            <Button value="Add More" onClick={() => fileInputRef.click()} />
+            <Button value="Clear All" onClick={clearAll} />
+          </div>
         </div>
       </Show>
 
