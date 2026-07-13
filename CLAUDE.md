@@ -44,6 +44,10 @@
 - アップロード自体は素の`fetch`/`XMLHttpRequest`ではなく、PocketBase JS SDKの`pb.collection('images').create(formData)`を使う形に統一。
 - `main.jsx`のルーターに追加、`NavBar`にリンクを足す。
 
+旧`upload.html`/`upload.js`のUX（ペースト・D&D・プレビュー・結果カード・Markdownコピー）を移植しつつ、アップロード自体はPocketBase JS SDKの`pb.collection('images').create(formData)`に統一します。
+旧実装はXHRで正確な進捗%を出していましたが、PocketBase SDKは内部で`fetch`を使っており、素の`fetch`にはアップロード進捗イベントがありません。
+シンプルさ優先の方針に沿って、進捗バーは「アップロード中…」の単純な表示に簡略化します（Phase 4で決定済みのURL設計＝`pb.files.getURL()`をそのまま使う方針とも整合します）
+
 ## Phase 4（確定版）: URL / access設計
 
 **画像配信URL**
