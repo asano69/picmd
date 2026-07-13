@@ -36,7 +36,7 @@ kill-ports:
 .PHONY: server
 server: kill-ports
 	#./picmd migrate up --dir=pb_data
-	./$(BINARY) superuser upsert admin@mail.internal password --dir=pb_data
+	./$(BINARY) superuser create admin@mail.internal password --dir=pb_data
 	./$(BINARY) serve
 
 # --------------
