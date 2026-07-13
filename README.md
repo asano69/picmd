@@ -5,8 +5,10 @@
 <img src="frontend/public/favicon.svg" width="100" align="right" />
 
 - Markdwonに画像を貼り付けるためのURLを生成する画像アップローダ。
-- 画像のメタデータの管理にPocketbaseを使い、コンテンツの管理を容易にする
-- クリップボードから簡単に画像をアップロードできる。
+- クリップボード、ファイルピッカーから簡単に画像をアップロードできる。複数枚対応。
+- 画像はアップロードの後、サーバ側で圧縮されて保存される。
+- 画像のメタデータの管理にPocketbaseを使い、コンテンツの管理を容易にする。
+
 
 ## Screenshot
 ![](./.github/assets/sample-01.png)
