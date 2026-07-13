@@ -834,6 +834,21 @@ func init() {
 						"type": "text"
 					},
 					{
+						"autogeneratePattern": "",
+						"help": "",
+						"hidden": false,
+						"id": "text3514781862",
+						"max": 0,
+						"min": 0,
+						"name": "uuid",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
 						"help": "",
 						"hidden": false,
 						"id": "file3309110367",
@@ -901,13 +916,15 @@ func init() {
 					}
 				],
 				"id": "pbc_3607937828",
-				"indexes": [],
+				"indexes": [
+					"CREATE UNIQUE INDEX ` + "`" + `idx_e0y0bnwkcu` + "`" + ` ON ` + "`" + `images` + "`" + ` (` + "`" + `uuid` + "`" + `)"
+				],
 				"listRule": null,
 				"name": "images",
 				"system": false,
 				"type": "base",
 				"updateRule": null,
-				"viewRule": null
+				"viewRule": ""
 			}
 		]`
 

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/filesystem"
 	"github.com/sirupsen/logrus"
@@ -23,7 +24,7 @@ var compressor media.Compressor = media.WebPCompressor{}
 // fields are updated to reflect the compressed output.
 //
 // Note: only the first uploaded file is compressed. Multi-image upload is
-// still an open question (see README "複数画像のアップロードの方法を検討する"),
+// still an open question
 // so this intentionally stays single-file until that's decided.
 func RegisterImageCompression(app core.App) {
 	app.OnRecordCreateRequest("images").BindFunc(func(e *core.RecordRequestEvent) error {
@@ -65,6 +66,20 @@ func RegisterImageCompression(app core.App) {
 			"compressed": result.CompressedSize,
 		}).Info("images: compressed upload")
 
+		return e.Next()
+	})
+}
+
+// RegisterUUIDAssignment stamps each new "images" record with a UUIDv7,
+// used to build a stable public URL independent of PocketBase's own
+// collection/record-id scheme (see the "/i/{uuid}" route in serve.go).
+func RegisterUUIDAssignment(app core.App) {
+	app.OnRecordCreateRequest("images").BindFunc(func(e *core.RecordRequestEvent) error {
+		id, err := uuid.NewV7()
+		if err != nil {
+			return fmt.Errorf("generate uuid: %w", err)
+		}
+		e.Record.Set("uuid", id.String())
 		return e.Next()
 	})
 }

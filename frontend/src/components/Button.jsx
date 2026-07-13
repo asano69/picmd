@@ -19,16 +19,17 @@ const defaultColors =
 // 3. Danger時の「赤色」（baseLayoutのサイズ感のまま、色だけを置き換える）
 const dangerColors =
   "text-white " +
-  "shadow-[0_1px_3px_0_rgb(220_53_69_/_0.3)] " + 
+  "shadow-[0_1px_3px_0_rgb(220_53_69_/_0.3)] " +
   "border border-[#c82333] bg-[#dc3545] " +
   "enabled:hover:bg-[#c82333] enabled:hover:border-[#c82333] " +
   "enabled:active:bg-[#bd2130] enabled:active:border-[#bd2130]";
 
 export default function Button(props) {
   // 骨格（baseLayout）に対して、通常色か危険色かを組み合わせる
-  const buttonClass = props.variant === "danger"
-    ? `${baseLayout} ${dangerColors}`
-    : `${baseLayout} ${defaultColors}`;
+  const buttonClass =
+    props.variant === "danger"
+      ? `${baseLayout} ${dangerColors}`
+      : `${baseLayout} ${defaultColors}`;
 
   return (
     <input
@@ -42,4 +43,3 @@ export default function Button(props) {
     />
   );
 }
-

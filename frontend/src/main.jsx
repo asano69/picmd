@@ -16,7 +16,9 @@ import pb from "./lib/pb";
 // both login and logout.
 function AuthGate(props) {
   const [authed, setAuthed] = createSignal(pb.authStore.isValid);
-  const unsubscribe = pb.authStore.onChange(() => setAuthed(pb.authStore.isValid));
+  const unsubscribe = pb.authStore.onChange(() =>
+    setAuthed(pb.authStore.isValid),
+  );
   onCleanup(unsubscribe);
 
   return (
@@ -31,12 +33,10 @@ render(
     <AuthGate>
       <Router>
         <Route path="/" component={Home} />
-      <Route path="/upload" component={Upload} />
+        <Route path="/upload" component={Upload} />
         <Route path="/settings" component={Settings} />
-
       </Router>
     </AuthGate>
   ),
   document.getElementById("app"),
 );
-

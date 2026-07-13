@@ -51,7 +51,7 @@ export default function Upload() {
       formData.append("image", f, f.name || `clipboard-${Date.now()}.png`);
       const record = await pb.collection("images").create(formData);
       setResult({
-        url: pb.files.getURL(record, record.image),
+        url: new URL(`/i/${record.uuid}`, window.location.origin).href,
         filename: record.filename,
         filesize: record.filesize,
       });
@@ -108,7 +108,9 @@ export default function Upload() {
             onDragOver={(e) => e.preventDefault()}
             onDrop={onDrop}
             onClick={() => fileInputRef.click()}
-            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && fileInputRef.click()}
+            onKeyDown={(e) =>
+              (e.key === "Enter" || e.key === " ") && fileInputRef.click()
+            }
           >
             <p class="text-sm leading-loose">
               <span class="font-semibold">Ctrl+V</span> to paste from clipboard
@@ -137,12 +139,17 @@ export default function Upload() {
             class="w-full rounded-md border border-[var(--color-border-soft)]"
           />
           <p class="mt-2 text-sm opacity-70">
-            {file().name || "clipboard-image"} · {file().type} · {formatSize(file().size)}
+            {file().name || "clipboard-image"} · {file().type} ·{" "}
+            {formatSize(file().size)}
           </p>
 
           <Show when={!result()}>
             <div class="mt-3 flex flex-wrap">
-              <Button value={uploading() ? "Uploading…" : "Upload"} disabled={uploading()} onClick={upload} />
+              <Button
+                value={uploading() ? "Uploading…" : "Upload"}
+                disabled={uploading()}
+                onClick={upload}
+              />
               <Button value="Clear" disabled={uploading()} onClick={clear} />
             </div>
           </Show>
@@ -159,7 +166,10 @@ export default function Upload() {
                   <span class="font-medium">{formatSize(r().filesize)}</span>
                 </div>
                 <div class="mt-2 flex flex-wrap">
-                  <Button value={copied() ? "Copied!" : "Copy Markdown"} onClick={copyMarkdown} />
+                  <Button
+                    value={copied() ? "Copied!" : "Copy Markdown"}
+                    onClick={copyMarkdown}
+                  />
                   <Button value="Upload Another" onClick={clear} />
                 </div>
               </div>
