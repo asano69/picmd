@@ -50,7 +50,8 @@ RUN apk add --no-cache \
     busybox-extras \
     tzdata \
     bash \
-    curl
+    curl \
+    sqlite
  
 RUN addgroup -g 1000 picmd && \
     adduser -D -u 1000 -G picmd picmd
