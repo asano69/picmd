@@ -1,0 +1,20 @@
+name: Deploy
+on:
+  push:
+    paths:
+      - '**/*.go'
+      - '**/*.jsx'
+      - '**/*.svg'
+      - '**/*.html'
+      - '**/*.css'
+      - '**/*.js'      
+      - 'Dockerfile'
+      - 'entrypoint.sh'
+    paths-ignore:
+      - '**/README.md'
+
+jobs:
+  dummy:
+    runs-on: git-runner
+    steps:
+      - run: echo OK
